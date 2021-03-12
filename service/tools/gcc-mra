@@ -1,0 +1,29 @@
+#!/usr/bin/python3
+import os, sys, subprocess
+BLACKLIST = {'/dev/null', 'lib/libc.so', 'obj/src/string/aarch64/memcpy.lo', 'obj/src/string/aarch64/memset.lo'}
+BADCFLAGS = ['-Os', '-fomit-frame-pointer', '-fno-unwind-tables', '-fno-asynchronous-unwind-tables']
+argv = ['aarch64-linux-gnu-gcc-8'] + sys.argv[1:]
+if '-o' in argv:
+    o = argv.index('-o')
+    output = argv[o + 1]
+    if output not in BLACKLIST and '-c' in argv:
+        c = argv.index('-c')
+        argv[c] = '-S'
+        if argv[-1].endswith('.c'):
+            asm = output + '.0.s'
+            argv[o + 1] = asm
+            for cflag in BADCFLAGS:
+                if cflag in argv:
+                    argv.remove(cflag)
+            # print(argv)
+            ret = subprocess.call(argv)
+            if ret != 0:
+                sys.exit(ret)
+        else:
+            asm = argv[-1]
+        mra = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'mra.py')
+        ret = subprocess.call(['python3', mra, asm, output + '.1.s'])
+        if ret != 0:
+            sys.exit(ret)
+        sys.exit(subprocess.call(['aarch64-linux-gnu-as', '-o', output, output + '.1.s']))
+sys.exit(subprocess.call(argv))
