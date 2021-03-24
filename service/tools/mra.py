@@ -1,12 +1,30 @@
 import sys, re
 
-BLACKLIST = {
+def _fix_init_fini(lines, start):
+    assert lines[start + 2] == '\tstp x29,x30,[sp,-16]!\n'
+    assert lines[start + 3] == '\tmov x29,sp\n'
+    lines[start + 2] = '\tstp x29,x30,[sp,16]!\n'
+    return True
+
+def _fix_start_c(lines, start):
+    assert lines[start + 1] == '_start_c:\n'
+    lines[start + 1] += '\tsub sp, sp, #0x80000\n'
+    return False
+
+SKIPLIST = {
         # special functions
-        '_start', '_init', '_fini', '__init_libc',
-        '_longjmp', 'longjmp', 'sigsetjmp', '__sigsetjmp',
+        '_start', '_longjmp', 'longjmp', 'sigsetjmp', '__sigsetjmp',
+        }
+
+ABORTLIST = {
         # large stack frame
-        '__alt_socketcall', '__inet_aton', '__res_mkquery',
-        'child',
+        '__alt_socketcall', '__inet_aton', '__res_mkquery', 'child',
+        }
+
+FIXLIST = {
+        '_init': _fix_init_fini,
+        '_fini': _fix_init_fini,
+        '_start_c': _fix_start_c,
         }
 
 PAT0 = re.compile(r'\[sp, (-?\d+)\]!')
@@ -32,7 +50,15 @@ if __name__ == '__main__':
                 func = lines[i].split()[1].split(',')[0]
                 print('processing function %s' % func)
 
-                if func in BLACKLIST:
+                if func in FIXLIST:
+                    if FIXLIST[func](lines, i):
+                        i += 1
+                        continue
+                if func in SKIPLIST:
+                    i += 1
+                    continue
+                elif func in ABORTLIST:
+                    lines[i + 1] += '\n\tbrk #0\n'
                     i += 1
                     continue
 
@@ -106,7 +132,7 @@ if __name__ == '__main__':
                             elif op[2] == 'sp,':
                                 offset = int(op[3])
                                 # assert 0 <= offset < stack_size, lines[j]
-                                assert 0 <= offset <= stack_size, lines[j]
+                                assert (0 <= offset <= stack_size) or (offset % 0x100 == 0), lines[j]
                                 offset -= stack_size
                                 if -offset <= 0x1000:
                                     new = '\tsub\t%s sp, %d\n' % (op[1], -offset)
