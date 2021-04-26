@@ -9,7 +9,7 @@ if '-o' in argv:
     if output not in BLACKLIST and '-c' in argv:
         c = argv.index('-c')
         argv[c] = '-S'
-        if argv[-1].endswith('.c'):
+        if any(map(lambda _:_.endswith('.c'), argv)):
             asm = output + '.0.s'
             argv[o + 1] = asm
             for cflag in BADCFLAGS:
