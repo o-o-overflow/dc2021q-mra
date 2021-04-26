@@ -140,6 +140,7 @@ if __name__ == '__main__':
                                     assert x16 != 0 and -offset - x16 < 0x1000
                                     new = '\tsub\tsp, sp, x16\n'
                                     new += '\tsub\t%s sp, %d\n' % (op[1], -offset - x16)
+                                    new += '\tadd\tsp, sp, x16\n'
                         elif op[0] in OP0:
                             if op[2].startswith('[sp'):
                                 if len(op) == 4:
