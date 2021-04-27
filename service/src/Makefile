@@ -8,13 +8,17 @@ CROSS_COMPILE := aarch64-linux-gnu-
 CC := ../tools/gcc-mra
 .PHONY: all clean
 
-all: service
+all: mra
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 service: service.o
 	$(CROSS_COMPILE)$(LD) -o $@ $^ $(LDFLAGS)
+
+mra: service
+	cp $< $@
+	$(CROSS_COMPILE)strip $@
 
 clean:
 	rm -rf *.o *.s

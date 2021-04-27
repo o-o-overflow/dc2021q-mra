@@ -5,7 +5,7 @@ run apt-get -qq update && apt-get install -qq --no-install-recommends xinetd qem
 # python3-pip, etc.
 
 # Note: anything that goes in public_files must be pre-built and checked in git
-copy src/service /service
+copy src/mra /mra
 
 # If desired, the deployment tester can pass in the flag from the yaml
 ARG THE_FLAG="OOO{this is a test flag}"
