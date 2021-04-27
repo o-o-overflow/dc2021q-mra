@@ -6,11 +6,43 @@
 
 // idea from https://isevenapi.xyz/
 
+uint8_t unhex(char c)
+{
+    if (c >= '0' && c <= '9') {
+        return c - '0';
+    } else if (c >= 'a' && c <= 'f') {
+        return c - 'a' + 10;
+    } else if (c >= 'A' && c <= 'F') {
+        return c - 'A' + 10;
+    } else {
+        return 0;
+    }
+}
+
+int url_decode(char *dst, const char *src)
+{
+    for (int i = 0, j = 0; ; ) {
+        char c = src[i];
+        if (c == '\0') {
+            return j;
+        } else if (c == '%') {
+            c = (unhex(src[i + 1]) << 4) | (unhex(src[i + 2]));
+            i += 3;
+        } else {
+            i += 1;
+        }
+        dst[j++] = c;
+    }
+}
+
 int main(int argc, char** argv) {
+    setvbuf(stdout, NULL, _IONBF, 0);
+    setvbuf(stderr, NULL, _IONBF, 0);
     const char *path = "GET /api/isodd/";
     const char *ad = "Buy isOddCoin, the hottest new cryptocurrency!";
-    char number[0x20] = {0};
+    char number[0x10] = {0};
     char buf[0x400] = {0};
+    char *token = "public";
     int n = read(0, buf, sizeof(buf) - 1);
     if (n > sizeof(path) && strncmp(&buf[0], path, 15) == 0) {
         char *endl = strchr(buf, '\n');
@@ -25,7 +57,6 @@ int main(int argc, char** argv) {
             *endl = '\0';
         }
 
-        char *token = "public";
         char *query = strchr(buf, '?');
         if (query != NULL) {
             *query = '\0';
@@ -34,7 +65,7 @@ int main(int argc, char** argv) {
                 token = query + 6;
             }
         }
-        const char *request = &buf[15];
+        char *request = &buf[15];
         char *slash = strchr(request, '/');
         if (slash != NULL) {
             *slash = '\0';
@@ -42,6 +73,10 @@ int main(int argc, char** argv) {
 
         size_t n = strlen(request);
         if (!strcmp(token, "enterprise")) {
+            if (n > 12) {
+                puts("{\n\t\"error\": \"contact us for unlimited large number support\"\n}");
+                return 0;
+            }
         } else if (!strcmp(token, "premium")) {
             if (n > 9) {
                 puts("{\n\t\"error\": \"sign up for enterprise to get large number support\"\n}");
@@ -54,8 +89,9 @@ int main(int argc, char** argv) {
                 return 0;
             }
         }
-        memcpy(&number, request, n);
-        number[n] = 0;
+
+        n = url_decode(number, request);
+        // fprintf(stderr, "the number %s %d %d\n", number, strlen(number), n);
 
         if (number[0] == '-' && !strcmp(token, "public")) {
             puts("{\n\t\"error\": \"sign up for premium or enterprise to get negative number support\"\n}");
