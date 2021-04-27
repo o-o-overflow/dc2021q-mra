@@ -35,6 +35,16 @@ int url_decode(char *dst, const char *src)
     }
 }
 
+int response(int code, const char *info)
+{
+    if (code == 200) {
+        printf("HTTP/1.1 200 OK\r\n");
+    } else if (code == 401){
+        printf("HTTP/1.1 401 Unauthorized\r\n");
+    }
+    printf("Content-Type: application/json\r\nContent-Length: %ld\r\n\r\n%s", strlen(info), info);
+}
+
 int main(int argc, char** argv) {
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
@@ -71,21 +81,23 @@ int main(int argc, char** argv) {
             *slash = '\0';
         }
 
+        const char *resp = NULL;
+
         size_t n = strlen(request);
         if (!strcmp(token, "enterprise")) {
             if (n > 12) {
-                puts("{\n\t\"error\": \"contact us for unlimited large number support\"\n}");
+                response(401, "{\n\t\"error\": \"contact us for unlimited large number support\"\n}");
                 return 0;
             }
         } else if (!strcmp(token, "premium")) {
             if (n > 9) {
-                puts("{\n\t\"error\": \"sign up for enterprise to get large number support\"\n}");
+                response(401, "{\n\t\"error\": \"sign up for enterprise to get large number support\"\n}");
                 return 0;
             }
         } else {
             token = "public";
             if (n > 6) {
-                puts("{\n\t\"error\": \"sign up for premium or enterprise to get large number support\"\n}");
+                response(401, "{\n\t\"error\": \"sign up for premium or enterprise to get large number support\"\n}");
                 return 0;
             }
         }
@@ -94,15 +106,17 @@ int main(int argc, char** argv) {
         // fprintf(stderr, "the number %s %d %d\n", number, strlen(number), n);
 
         if (number[0] == '-' && !strcmp(token, "public")) {
-            puts("{\n\t\"error\": \"sign up for premium or enterprise to get negative number support\"\n}");
+            response(401, "{\n\t\"error\": \"sign up for premium or enterprise to get negative number support\"\n}");
             return 0;
         } else {
             int last_digit = number[n - 1] - '0';
+            char *msg = NULL;
             if (!strcmp(token, "public")) {
-                printf("{\n\t\"isodd\": %s,\n\t\"ad\": \"%s\"\n}", (last_digit % 2 == 1) ? "true": "false", ad);
+                asprintf(&msg, "{\n\t\"isodd\": %s,\n\t\"ad\": \"%s\"\n}\n", (last_digit % 2 == 1) ? "true": "false", ad);
             } else {
-                printf("{\n\t\"isodd\": %s\n}", (last_digit % 2 == 1) ? "true": "false");
+                asprintf(&msg, "{\n\t\"isodd\": %s\n}\n", (last_digit % 2 == 1) ? "true": "false");
             }
+            response(200, msg);
             return 0;
         }
     }
