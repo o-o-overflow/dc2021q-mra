@@ -9,7 +9,7 @@ authors:
 
 # Flag info
 violates_flag_format: false         # if this is not "true", the flag is verfied against the flag format
-flag: "OOO{this is a test flag}"    # change it!
+flag: "OOO{the_0rder_0f_0verflow_is_0dd}"    # change it!
 copy_flag_using_build_arg: True     # Optionally: pass in THE_FLAG=(the flag above) using --build-arg (allows variable flags if desired for testing)
 
 # How players will connect to your service.
