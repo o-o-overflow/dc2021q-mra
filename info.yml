@@ -4,6 +4,10 @@ description: "Is it odd?"
 tags:
   - pwn
   - reversing
+  - --special-emoji-💪
+  - --special-lat-42
+  - --special-lon-68
+
 authors:
   - slipper
 
